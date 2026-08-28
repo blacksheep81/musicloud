@@ -3,7 +3,7 @@
 Environment: Apple Silicon macOS, Swift 6.2.3 Command Line Tools.
 
 - `swift build --product Musicloud`: passed.
-- Nineteen Swift Testing tests passed, including a parameterized WAV/FLAC test.
+- Twenty-nine Swift Testing tests passed, including a parameterized WAV/FLAC test.
   Run with `bash scripts/test.sh`.
 - Domain tests cover supported extensions, duplicate merging/order, search,
   library JSON round-trip, nested folder scans, hidden files, symlink loops,
@@ -17,6 +17,10 @@ Environment: Apple Silicon macOS, Swift 6.2.3 Command Line Tools.
 - Album tests cover folder separation, compilations, and natural filename order.
 - Artwork tests cover embedded FLAC, sidecar JPEG, thumbnail sizing, absent artwork,
   truncated picture fields, oversized length fields, and rejection of linked URIs.
+- OneDrive mock tests cover PKCE, callback state/shape validation, code exchange,
+  shared token refresh, one-time HTTP 401 retry, revocation, disconnect races,
+  trusted pagination, account isolation, HTTPS download URLs, stable cloud IDs,
+  and backward-compatible local library decoding. No real tokens are used.
 - `bash scripts/package-app.sh`: passed; local unsigned app bundle created.
 - `plutil -lint packaging/Info.plist` and shell syntax check: passed.
 - App bundle opened; accessibility tree and screenshot confirmed the empty
@@ -30,10 +34,14 @@ Environment: Apple Silicon macOS, Swift 6.2.3 Command Line Tools.
 - Queue inspector opening and empty state verified using Command-Shift-L.
 - Command-Shift-E added both album tracks; the queue displayed two independent
   entries with play, move, and remove controls in the detail/inspector layout.
+- OneDrive sidebar and configuration sheet opened in the packaged app; an absent
+  or invalid Client ID leaves Connect disabled. No browser login was initiated.
 - AX click automation closed its connection; keyboard menu navigation worked and
   completed the folder-import checks.
 
 Not yet verified: subjective listening on real music, the full codec/sample-rate
 matrix, all queue controls via UI, UI seek controls, minimum-size layout, or cloud playback.
+OneDrive still needs a registered Client ID, real OAuth/Keychain verification,
+live folder browsing, and remote WAV/FLAC streaming/seek tests.
 No user music or account credentials are committed. The local development library
 contains two generated Musicloud Test Tone entries from the UI checks.

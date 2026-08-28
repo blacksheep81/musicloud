@@ -76,7 +76,7 @@ struct SongTable: View {
             Table(tracks, selection: $selection) {
                 TableColumn("Title") { track in
                     HStack(spacing: 8) {
-                        Image(systemName: model.current?.id == track.id ? "speaker.wave.2.fill" : "music.note")
+                        Image(systemName: model.current?.id == track.id ? "speaker.wave.2.fill" : (track.cloud == nil ? "music.note" : "cloud"))
                             .foregroundStyle(model.current?.id == track.id ? .teal : .secondary).frame(width: 20)
                         Text(track.title).lineLimit(1)
                     }

@@ -15,14 +15,17 @@
 - [ ] Artist views and disc/track-number ordering
 - [ ] App bundle, app icon, and media-key integration
 
-## 0.2 - OneDrive
+## 0.2 - OneDrive (experimental, real-account QA pending)
 
-- Register a desktop OAuth application with Microsoft
-- Browser-based authentication with PKCE; tokens in Keychain
-- Folder selection, paginated enumeration, incremental indexing
-- Resolve expiring download links at playback time
-- Range requests, retry handling, seek, and bounded disk cache
-- Integration tests for expiration, rate limits, and network loss
+- [ ] Register a desktop OAuth application with Microsoft and test a real account
+- [x] Browser-based authentication with PKCE; tokens in Keychain (not yet live-tested)
+- [x] Folder browser, paginated enumeration and selected-track import
+- [x] Resolve expiring download links at playback time
+- [x] Mock tests for refresh, callback validation, account isolation and pagination
+- [ ] Recursive imports and incremental indexing
+- [ ] Verify remote WAV/FLAC playback, Range requests and seek
+- [ ] Bounded disk cache, mid-playback expiry recovery, rate-limit backoff
+- [ ] Real-account integration tests for expiry and network loss
 
 ## 0.3 - Google Drive and WebDAV
 

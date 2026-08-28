@@ -36,6 +36,7 @@ struct LibraryView: View {
     @State private var section: LibrarySection = .albums
     @State private var albumID: Album.ID?
     @State private var showQueue = false
+    @State private var showOneDrive = false
     private var albums: [Album] { model.albums }
     private var album: Album? { albums.first { $0.id == albumID } }
 
@@ -63,6 +64,13 @@ struct LibraryView: View {
                         }
                         Text("\(albums.count) albums / \(model.tracks.count) tracks")
                             .font(.caption).foregroundStyle(.secondary).padding(.leading, 8)
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("SOURCES").font(.caption).foregroundStyle(.secondary)
+                        Button { showOneDrive = true } label: {
+                            Label("OneDrive", systemImage: "cloud")
+                                .frame(maxWidth: .infinity, alignment: .leading).padding(8)
+                        }.buttonStyle(.plain).keyboardShortcut("d", modifiers: [.command, .shift])
                     }
                     Spacer()
                     if let current = model.current {
@@ -118,6 +126,7 @@ struct LibraryView: View {
             TransportView(model: model).padding(.horizontal, 24).padding(.vertical, 16)
         }
         .tint(.teal)
+        .sheet(isPresented: $showOneDrive) { OneDriveView(cloud: model.oneDrive, player: model) }
         .alert("musicloud", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
@@ -159,8 +168,11 @@ private struct TransportView: View {
                 Button { model.previous() } label: { Image(systemName: "backward.end.fill") }
                     .help("Previous").disabled(model.current == nil)
                 Button { model.togglePlayback() } label: {
-                    Image(systemName: model.isPlaying ? "pause.fill" : "play.fill").font(.title2).frame(width: 32, height: 32)
-                }.help(model.isPlaying ? "Pause" : "Play").disabled(model.tracks.isEmpty)
+                    ZStack {
+                        if model.isPreparing { ProgressView().controlSize(.small) }
+                        else { Image(systemName: model.isPlaying ? "pause.fill" : "play.fill").font(.title2) }
+                    }.frame(width: 32, height: 32)
+                }.help(model.isPlaying ? "Pause" : "Play").disabled(model.tracks.isEmpty || model.isPreparing)
                 Button { model.next() } label: { Image(systemName: "forward.end.fill") }
                     .help("Next").disabled(model.queue.upcoming.isEmpty)
             }.buttonStyle(.plain)

@@ -14,6 +14,8 @@ final class PlayerModel: ObservableObject {
     @Published var queue = PlaybackQueue()
     var current: Track? { queue.current?.track }
     @Published var isPlaying = false
+    @Published var isPreparing = false
+    let oneDrive = OneDriveModel()
     @Published var isImporting = false
     @Published var importProgress: ImportProgress?
     @Published var importSummary: String?
@@ -32,6 +34,8 @@ final class PlayerModel: ObservableObject {
     private var itemObservation: NSKeyValueObservation?
     private let libraryURL: URL
     private var importTask: Task<Void, Never>?
+    private var playbackTask: Task<Void, Never>?
+    private var playbackVersion = 0
 
     init() {
         libraryURL = URL.applicationSupportDirectory
@@ -119,19 +123,57 @@ final class PlayerModel: ObservableObject {
         if let track = queue.playNow(id) { startPlayback(track) }
     }
 
+    func addCloudTracks(_ additions: [Track]) {
+        let count = tracks.count
+        tracks = Library.merging(tracks, with: additions)
+        importSummary = "\(tracks.count - count) cloud tracks added"
+        if tracks.count != count { persist() }
+    }
+
+    func stopCloudPlayback() {
+        guard current?.cloud != nil else { return }
+        playbackVersion += 1
+        playbackTask?.cancel()
+        isPreparing = false
+        player.pause()
+        player.replaceCurrentItem(with: nil)
+    }
+
     private func startPlayback(_ track: Track) {
+        playbackVersion += 1
+        let version = playbackVersion
+        playbackTask?.cancel()
+        isPreparing = false
         player.pause()
         player.replaceCurrentItem(with: nil)
         elapsed = 0
         duration = 0
-        guard FileManager.default.fileExists(atPath: track.url.path) else {
-            error = "File is missing: \(track.url.lastPathComponent)"
-            return
-        }
         if let ended { NotificationCenter.default.removeObserver(ended) }
         if let failed { NotificationCenter.default.removeObserver(failed) }
         itemObservation = nil
-        let item = AVPlayerItem(url: track.url)
+        if let reference = track.cloud {
+            isPreparing = true
+            playbackTask = Task {
+                defer { if version == playbackVersion { isPreparing = false; playbackTask = nil } }
+                do {
+                    let url = try await oneDrive.playbackURL(reference)
+                    try Task.checkCancellation()
+                    guard version == playbackVersion else { return }
+                    activatePlayback(url)
+                } catch is CancellationError {}
+                catch { if version == playbackVersion { self.error = error.localizedDescription } }
+            }
+            return
+        }
+        guard track.url.isFileURL, FileManager.default.fileExists(atPath: track.url.path) else {
+            error = "File is missing: \(track.url.lastPathComponent)"
+            return
+        }
+        activatePlayback(track.url)
+    }
+
+    private func activatePlayback(_ url: URL) {
+        let item = AVPlayerItem(url: url)
         player.replaceCurrentItem(with: item)
         itemObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
@@ -158,11 +200,13 @@ final class PlayerModel: ObservableObject {
     }
 
     func togglePlayback() {
+        guard !isPreparing else { return }
         guard current != nil else {
             if let queued = queue.advance() { startPlayback(queued) }
             else if let first = tracks.first { play(first) }
             return
         }
+        if player.currentItem == nil, let current { startPlayback(current); return }
         if player.timeControlStatus == .paused {
             if duration > 0 && elapsed >= duration - 0.2 { seek(0) }
             player.play()
@@ -191,6 +235,9 @@ final class PlayerModel: ObservableObject {
 
     func remove(_ ids: Set<URL>) {
         if let current, ids.contains(current.id) {
+            playbackVersion += 1
+            playbackTask?.cancel()
+            isPreparing = false
             player.pause()
             player.replaceCurrentItem(with: nil)
             duration = 0

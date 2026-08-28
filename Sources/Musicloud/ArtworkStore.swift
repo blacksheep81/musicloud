@@ -10,6 +10,7 @@ final class ArtworkStore {
     init() { cache.countLimit = 100 }
 
     func image(for url: URL) async -> NSImage? {
+        guard url.isFileURL else { return nil }
         if let cached = cache.object(forKey: url as NSURL) { return cached }
         let worker = Task.detached(priority: .utility) { await ArtworkLoader.load(url) }
         let bitmap = await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }

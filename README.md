@@ -11,7 +11,11 @@ Playback uses AVFoundation; supported extensions are WAV, FLAC, M4A, MP3,
 AIFF, and AAC. Actual decoding depends on the file and macOS; this is not a
 bit-perfect, exclusive-output, or gapless playback claim.
 
-**OneDrive and Google Drive are planned, not implemented.**
+**OneDrive is experimental and requires your own Microsoft application Client ID.**
+OAuth/Keychain integration, folder browsing and paging, selected-track import,
+and playback-time link resolution are implemented. Real-account login and cloud
+streaming have not yet been verified. See [OneDrive setup](docs/ONEDRIVE.md).
+Google Drive is not implemented yet.
 
 Folder import scans subfolders in the background, skips hidden files and nested
 symbolic links, filters duplicates before reading metadata, and reports progress.

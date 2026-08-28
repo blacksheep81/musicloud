@@ -33,12 +33,17 @@ checks lengths against the file/block, and prefers front-cover pictures.
 
 ## Cloud sources
 
-MusicSource is a contract only, not a working cloud integration. Provider records
-will need provider/account/item identifiers, revision and cache identity. Local
-Track uses a file URL today and will be migrated when the first provider lands.
+MusicSource remains a generic future-provider contract. The first concrete
+OneDriveService lives in MusicloudCloud, with an injectable HTTP transport and
+token vault. Track now has an optional CloudTrackReference; old local JSON decodes
+without migration. Cloud identity uses drive/item IDs, while a synthetic URL
+preserves folder grouping and the filename. Revision/cache identities are pending.
 Never persist expiring direct links as track identity. Providers must support
 pagination and cancellable requests. Authentication belongs in platform adapters;
 no passwords, access tokens, or private account details belong in the repository.
+The OneDrive session actor shares refresh work, rejects unsafe pagination origins,
+and invalidates pending results on disconnect. Playback URL resolution is cancelled
+when the player switches tracks; the library only stores stable references.
 
 ## Cross-platform tradeoff
 
