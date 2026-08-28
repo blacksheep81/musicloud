@@ -10,6 +10,7 @@ import { SongResult, LocalSong, LocalPlaylist, LocalLibraryGroup, Theme, PlayerS
 import { getNavidromeConfig, navidromeApi } from '../services/navidromeService';
 import LocalGrid3DView from './app/home/LocalGrid3DView';
 import NavidromeGrid3DView from './app/home/NavidromeGrid3DView';
+import CloudSourcesView from './app/home/CloudSourcesView';
 import DesktopGrid3DSurface from './folia-grid/DesktopGrid3DSurface';
 import {
     createOnlineGridViewCollection,
@@ -604,6 +605,7 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
     // Search committed callback
     const handleSearch = async (e?: React.FormEvent) => {
         e?.preventDefault();
+        if (homeViewTab === 'cloud') return;
         const query = searchQuery.trim();
         if (!query) return;
 
@@ -647,9 +649,9 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
 
             {/* Main Header Container (Fades out when sliding/interacting) */}
             <div className="transition-opacity duration-300 ease-in-out z-20 opacity-100 select-none">
-                <div className="grid grid-cols-2 md:grid-cols-3 items-center w-full max-w-7xl mx-auto p-4 md:p-8 gap-y-4 md:gap-y-0">
+                <div className="grid grid-cols-2 xl:grid-cols-[minmax(160px,1fr)_auto_minmax(180px,1fr)] items-center w-full max-w-7xl mx-auto p-4 md:p-8 gap-y-4 xl:gap-y-0">
                     {/* Left title and settings */}
-                    <div className="flex items-center justify-start order-1 md:order-none">
+                    <div className="flex items-center justify-start order-1 xl:order-none">
                         <h1 className="text-2xl font-bold tracking-normal opacity-90 flex items-center gap-3">
                             Musicloud
                         </h1>
@@ -728,8 +730,8 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
                     </div>
 
                     {/* Center Tab Switcher */}
-                    <div className="flex justify-center order-3 md:order-none col-span-2 md:col-span-1">
-                        <div className={`relative ${navPillBg} backdrop-blur-md p-1 rounded-full scale-90 md:scale-100 origin-center`}>
+                    <div className="flex min-w-0 justify-center order-3 xl:order-none col-span-2 xl:col-span-1">
+                        <div className={`relative max-w-full overflow-x-auto ${navPillBg} backdrop-blur-md p-1 rounded-full`}>
                             <div className="inline-flex items-center gap-0">
                                 {[
                                     ...(showHomeTabPlaylist ? [{ key: 'playlist', label: t('home.playlists'), disabledReason: playlistUnavailableReason }] : []),
@@ -745,6 +747,7 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
                                                 : 'localMusic.importNotSupported'),
                                     }] : []),
                                     ...(navidromeEnabled ? [{ key: 'navidrome', label: t('navidrome.title') || 'Navidrome', disabledReason: undefined }] : []),
+                                    { key: 'cloud', label: t('cloud.title'), disabledReason: undefined },
                                 ].map((tab) => {
                                     const isActive = homeViewTab === tab.key;
                                     return (
@@ -755,6 +758,7 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
                                         >
                                             <button
                                                 disabled={Boolean(tab.disabledReason)}
+                                                aria-pressed={isActive}
                                                 aria-label={tab.disabledReason || tab.label}
                                                 onClick={() => {
                                                     setHomeViewTab(tab.key as any);
@@ -788,8 +792,8 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
                     </div>
 
                     {/* Right Search Bar */}
-                    <div className="flex justify-end order-2 md:order-none">
-                        <form onSubmit={handleSearch} className="relative w-full md:w-56 transition-all focus-within:md:w-72">
+                    <div className="flex min-w-0 justify-end order-2 xl:order-none">
+                        {homeViewTab !== 'cloud' && <form onSubmit={handleSearch} className="relative w-full max-w-56">
                             {isSearchingActive ? (
                                 <Loader2 className="absolute left-3 top-1/2 w-4 h-4 animate-spin opacity-40 -mt-2" />
                             ) : (
@@ -806,14 +810,19 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
                                 className={`w-full ${inputBg} border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all placeholder:text-current placeholder:opacity-40 select-text`}
                                 style={{ color: 'var(--text-primary)' }}
                             />
-                        </form>
+                        </form>}
                     </div>
                 </div>
             </div>
 
             {/* Desktop Canvas Surface */}
             <div className="flex-1 min-h-0 flex flex-col items-center justify-center relative">
-                {isOnlineTab && activeAccountView === 'resolving' ? (
+                {homeViewTab === 'cloud' ? (
+                    <CloudSourcesView
+                        navidromeEnabled={navidromeEnabled}
+                        onBrowseNas={() => setHomeViewTab('navidrome')}
+                    />
+                ) : isOnlineTab && activeAccountView === 'resolving' ? (
                     <div className="flex flex-1 w-full items-center justify-center" aria-busy="true">
                         <Loader2 className="animate-spin opacity-30" size={28} />
                     </div>

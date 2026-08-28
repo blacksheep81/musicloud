@@ -51,6 +51,19 @@ Reimport local music through Folia's existing library interface.
 
 ## Cloud Work
 
+The home navigation now includes Cloud (云端). It lists NAS, OneDrive,
+Google Drive and WebDAV. NAS configuration opens the existing Integration
+settings; an enabled, configured Navidrome server has an Open Library action.
+Configured does not mean a live connection has been verified.
+The other three adapters are explicitly marked unavailable, with no dummy login
+or credentials saved. Cloud selection persists across reloads and is available
+through the command palette.
+
+Cloud UI validation: typecheck passed; 19 search/navigation and command registry
+tests passed. Browser screenshots checked at 1280 x 720 and 390 x 844, with no
+observed overlap. NAS settings navigation and Cloud restoration on reload
+verified. No real NAS credentials or server were used.
+
 The existing Navidrome/Subsonic integration can be used with a server hosted on
 a NAS. This does not mean raw SMB or WebDAV folders are already supported.
 

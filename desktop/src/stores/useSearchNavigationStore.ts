@@ -65,6 +65,7 @@ const getSearchCacheKey = (query: string, sourceTab: SearchSource) => (
 );
 
 export const resolveSearchSource = (tab: HomeViewTab | SearchSource): SearchSource => {
+    if (tab === 'cloud') return 'local';
     if (tab === 'local' || tab === 'navidrome') {
         return tab;
     }
@@ -170,7 +171,7 @@ const getInitialHomeViewTab = (): HomeViewTab => {
         return 'playlist';
     }
     const savedTab = localStorage.getItem(LAST_HOME_VIEW_TAB_KEY);
-    return savedTab === 'playlist' || savedTab === 'local' || savedTab === 'albums' || savedTab === 'navidrome' || savedTab === 'radio'
+    return savedTab === 'playlist' || savedTab === 'local' || savedTab === 'albums' || savedTab === 'navidrome' || savedTab === 'radio' || savedTab === 'cloud'
         ? savedTab
         : 'playlist';
 };

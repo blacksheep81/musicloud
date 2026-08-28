@@ -5,6 +5,7 @@ import { createToggleCommand, createHomeTabCommand } from '../commandFactories';
 // Commands in the `navigation` group: moving between home tabs, the player, and window-level views.
 
 export const navigationCommands: CommandPaletteCommand[] = [
+    createHomeTabCommand('cloud', 'Open cloud sources', 'Manage NAS and cloud music connections', ['cloud', 'nas', 'onedrive', '云端', '网盘', 'yunduan', 'wangpan', 'yd', 'wp']),
     createToggleCommand('navigate-home', 'navigation', 'Go home', 'Return to home view', ['home', '首页', '主页', 'shouye', 'zhuye', 'sy', 'zy'], context => context.navigation.navigateToHome()),
     createToggleCommand('navigate-player', 'navigation', 'Go player', 'Return to player view', ['player', '播放页', '播放器', 'bofangye', 'bofangqi', 'bfy', 'bfq'], context => context.navigation.navigateToPlayer()),
     {

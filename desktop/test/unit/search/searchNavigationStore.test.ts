@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveCommandPaletteSearchSource, useSearchNavigationStore } from '@/stores/useSearchNavigationStore';
+import { resolveCommandPaletteSearchSource, resolveSearchSource, useSearchNavigationStore } from '@/stores/useSearchNavigationStore';
 import { neteaseApi } from '@/services/netease';
 import { getNavidromeConfig, navidromeApi } from '@/services/navidromeService';
 import type { LocalLibraryAssignment, LocalLibraryEntity } from '@/types/localLibrary';
@@ -63,6 +63,14 @@ describe('useSearchNavigationStore', () => {
             durationMs: 1,
         }, 'netease', 'kugou')).toBe('kugou');
         expect(resolveCommandPaletteSearchSource(null, 'netease', 'kugou')).toBe('kugou');
+    });
+
+    it('keeps cloud navigation separate from online provider identities', () => {
+        useSearchNavigationStore.getState().setHomeViewTab('cloud');
+        expect(useSearchNavigationStore.getState().homeViewTab).toBe('cloud');
+        expect(resolveSearchSource('cloud')).toBe('local');
+        expect(cloudSearchMock).not.toHaveBeenCalled();
+        expect(navidromeSearchMock).not.toHaveBeenCalled();
     });
 
     it('submits a local search and opens the overlay', async () => {

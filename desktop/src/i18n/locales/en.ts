@@ -1,6 +1,11 @@
 
 
 export default {
+  "cloud": {
+    "title": "Cloud", "nas": "NAS music server", "webdav": "Synology / other NAS",
+    "configured": "Configured", "notConfigured": "Not configured", "pending": "Not available yet",
+    "configure": "Configure NAS connection", "browse": "Open NAS library"
+  },
   "notifications": {
     "coverColorAdded": "Cover color added",
     "coverColorDefault": "Using default color",
@@ -372,6 +377,7 @@ export default {
       "browser-fullscreen": { "title": "Fullscreen", "description": "Toggle browser fullscreen" },
       "home-playlist": { "title": "Open playlists", "description": "Open playlist home tab" },
       "home-local": { "title": "Open local music", "description": "Open local music tab" },
+      "home-cloud": { "title": "Open cloud sources", "description": "Manage NAS and cloud music connections" },
       "home-albums": { "title": "Open albums", "description": "Open albums tab" },
       "home-navidrome": { "title": "Open Navidrome", "description": "Open Navidrome tab" },
       "home-radio": { "title": "Open radio", "description": "Open radio tab" },

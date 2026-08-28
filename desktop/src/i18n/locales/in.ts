@@ -1,6 +1,11 @@
 
 
 export default {
+  "cloud": {
+    "title": "Cloud", "nas": "Server musik NAS", "webdav": "Synology / NAS lainnya",
+    "configured": "Dikonfigurasi", "notConfigured": "Belum dikonfigurasi", "pending": "Belum tersedia",
+    "configure": "Konfigurasi koneksi NAS", "browse": "Buka pustaka NAS"
+  },
   "notifications": {
     "coverColorAdded": "Warna sampul ditambahkan",
     "coverColorDefault": "Menggunakan warna bawaan",
@@ -371,6 +376,7 @@ export default {
       "browser-fullscreen": { "title": "Layar penuh", "description": "Alihkan layar penuh browser" },
       "home-playlist": { "title": "Buka playlist", "description": "Buka tab playlist" },
       "home-local": { "title": "Buka musik lokal", "description": "Buka tab musik lokal" },
+      "home-cloud": { "title": "Buka sumber cloud", "description": "Kelola koneksi musik NAS dan cloud" },
       "home-albums": { "title": "Buka album", "description": "Buka tab album" },
       "home-navidrome": { "title": "Buka Navidrome", "description": "Buka tab Navidrome" },
       "home-radio": { "title": "Buka radio", "description": "Buka tab radio" },

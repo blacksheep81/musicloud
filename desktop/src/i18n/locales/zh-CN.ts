@@ -1,6 +1,11 @@
 
 
 export default {
+  "cloud": {
+    "title": "云端", "nas": "NAS 音乐服务器", "webdav": "群晖 / 其他 NAS",
+    "configured": "已配置", "notConfigured": "未配置", "pending": "暂未接入",
+    "configure": "配置 NAS 连接", "browse": "打开 NAS 音乐库"
+  },
   "notifications": {
     "coverColorAdded": "添加封面色彩",
     "coverColorDefault": "使用默认色彩",
@@ -372,6 +377,7 @@ export default {
       "browser-fullscreen": { "title": "全屏", "description": "切换浏览器全屏" },
       "home-playlist": { "title": "打开歌单", "description": "打开歌单首页 tab" },
       "home-local": { "title": "打开本地音乐", "description": "打开本地音乐 tab" },
+      "home-cloud": { "title": "打开云端", "description": "管理 NAS 和云盘音乐连接" },
       "home-albums": { "title": "打开专辑", "description": "打开专辑 tab" },
       "home-navidrome": { "title": "打开 Navidrome", "description": "打开 Navidrome tab" },
       "home-radio": { "title": "打开电台", "description": "打开电台 tab" },
