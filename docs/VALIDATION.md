@@ -45,3 +45,17 @@ OneDrive still needs a registered Client ID, real OAuth/Keychain verification,
 live folder browsing, and remote WAV/FLAC streaming/seek tests.
 No user music or account credentials are committed. The local development library
 contains two generated Musicloud Test Tone entries from the UI checks.
+
+## Native UI Refresh
+
+- Rebuilt and packaged the Folia-inspired dark UI; all 29 tests still pass.
+- Checked actual 1100 x 740 window screenshots for library, songs, now playing,
+  and the expanded queue panel. No overlapping controls were observed.
+- Command-P selected the first fixture; playback eventually advanced through
+  both fixtures and the WAV duration/position reached two seconds.
+- Artwork and playback initially stalled while the media framework was opening
+  local files, then loaded successfully. The cause of that initial delay is not
+  established; this does not constitute a startup performance guarantee.
+- Searching for FLAC reduced the two-track table to one result.
+- Now playing currently has a lyrics empty state only, not a lyric renderer.
+- Minimum-window sizing and all mouse interactions still need manual validation.

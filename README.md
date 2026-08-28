@@ -36,6 +36,12 @@ Keyboard navigation: Command-1/2 switches albums/songs, Command-Shift-L toggles
 the queue, and Command-Shift-E adds the open album to the queue. Album tiles
 support Tab focus and Return to open.
 
+The first Folia-inspired native UI includes a dark library, compact transport,
+search, a queue panel, and an independent now-playing view with album artwork.
+Command-Shift-F toggles now playing; Command-P plays or pauses.
+Lyrics currently show an empty state: lyric loading, time synchronization,
+per-word animation, and Folia's visual themes are not implemented.
+
 ## Development
 
 Requires macOS 14+ and Swift 6 (Xcode or Command Line Tools).
@@ -67,6 +73,9 @@ sandbox bookmarks, signing, and notarization are later milestones.
 Inspired by the visual care of [Hummingbird](https://github.com/hummingbird-player/hummingbird)
 and the multi-source concept of [Primuse](https://github.com/chenqi92/primuse).
 This is an independent implementation; neither project's code or assets are included.
+The current UI direction also references [Folia](https://github.com/chthollyphile/folia-major).
+It is an independently written SwiftUI interpretation, not a pixel-identical port;
+no Folia source code, screenshots, or theme assets are distributed in this repository.
 
 See [the roadmap](docs/ROADMAP.md) and [architecture decisions](docs/ARCHITECTURE.md).
 

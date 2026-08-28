@@ -10,7 +10,7 @@ struct AlbumGridView: View {
             ContentUnavailableView.search
         } else {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: 24)], alignment: .leading, spacing: 24) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 175, maximum: 230), spacing: 24)], alignment: .leading, spacing: 28) {
                     ForEach(albums) { album in
                         Button { select(album.id) } label: {
                             VStack(alignment: .leading, spacing: 8) {
@@ -31,7 +31,7 @@ struct AlbumGridView: View {
                             Button("Add to Queue", systemImage: "text.badge.plus") { model.enqueue(album.tracks) }
                         }
                     }
-                }.padding(.horizontal, 24).padding(.bottom, 24)
+                }.padding(.horizontal, 28).padding(.bottom, 28)
             }
         }
     }
@@ -77,13 +77,15 @@ struct SongTable: View {
                 TableColumn("Title") { track in
                     HStack(spacing: 8) {
                         Image(systemName: model.current?.id == track.id ? "speaker.wave.2.fill" : (track.cloud == nil ? "music.note" : "cloud"))
-                            .foregroundStyle(model.current?.id == track.id ? .teal : .secondary).frame(width: 20)
+                            .foregroundStyle(model.current?.id == track.id ? MusicTheme.accent : .secondary).frame(width: 20)
                         Text(track.title).lineLimit(1)
                     }
                 }
                 TableColumn("Artist") { Text($0.artist).lineLimit(1) }
                 TableColumn("Format", value: \.format).width(60)
             }
+            .alternatingRowBackgrounds(.disabled)
+            .scrollContentBackground(.hidden)
             .contextMenu(forSelectionType: URL.self) { ids in
                 Button("Play", systemImage: "play.fill") {
                     if let track = tracks.first(where: { ids.contains($0.id) }) { model.play(track, in: tracks) }
