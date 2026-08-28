@@ -63,12 +63,32 @@ struct LibraryView: View {
                     HStack {
                         Text("All Songs").font(.title2.weight(.semibold))
                         Spacer()
-                        if model.isImporting { ProgressView().controlSize(.small) }
                         Button { model.importFiles() } label: {
-                            Label("Import Music", systemImage: "plus")
+                            Label("Import Music", systemImage: "folder.badge.plus")
                         }
                         .disabled(model.isImporting)
                     }.padding(24)
+                    if model.isImporting {
+                        HStack(spacing: 12) {
+                            if let progress = model.importProgress {
+                                ProgressView(value: Double(progress.completed), total: Double(max(1, progress.total)))
+                                    .frame(width: 120)
+                                Text("\(progress.completed) / \(progress.total)").monospacedDigit()
+                            } else {
+                                ProgressView().controlSize(.small)
+                                Text("Scanning folders...")
+                            }
+                            Spacer()
+                            Button { model.cancelImport() } label: { Image(systemName: "xmark") }
+                                .buttonStyle(.plain).help("Cancel import")
+                                .accessibilityLabel("Cancel import")
+                        }
+                        .font(.caption).foregroundStyle(.secondary)
+                        .padding(.horizontal, 24).padding(.bottom, 12)
+                    } else if let summary = model.importSummary {
+                        Text(summary).font(.caption).foregroundStyle(.secondary)
+                            .padding(.horizontal, 24).padding(.bottom, 12)
+                    }
                     if model.tracks.isEmpty {
                         ContentUnavailableView {
                             Label("No Music Yet", systemImage: "music.note")

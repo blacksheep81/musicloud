@@ -8,6 +8,13 @@ track models, library merging, search, and the future music-source contract.
 The initial local JSON store is intentionally small; move to SQLite when cloud
 indexing and larger libraries justify it.
 
+MusicloudAudio owns the platform audio import adapter. LocalImporter runs folder
+enumeration and metadata processing in a cancellable utility task, validates
+playability, and emits progress. The UI commits the batch only on successful
+completion. AVAsset's full metadata collection is used because commonMetadata
+does not expose the generated WAV/FLAC fixtures' tags on the tested macOS version.
+LocalScanner canonicalizes file URLs and avoids nested symlink traversal.
+
 ## Cloud sources
 
 MusicSource is a contract only, not a working cloud integration. Provider records

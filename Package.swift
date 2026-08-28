@@ -7,7 +7,9 @@ let package = Package(
     products: [.executable(name: "Musicloud", targets: ["Musicloud"])],
     targets: [
         .target(name: "MusicloudCore"),
-        .executableTarget(name: "Musicloud", dependencies: ["MusicloudCore"]),
-        .testTarget(name: "MusicloudCoreTests", dependencies: ["MusicloudCore"])
+        .target(name: "MusicloudAudio", dependencies: ["MusicloudCore"]),
+        .executableTarget(name: "Musicloud", dependencies: ["MusicloudCore", "MusicloudAudio"]),
+        .testTarget(name: "MusicloudCoreTests", dependencies: ["MusicloudCore"]),
+        .testTarget(name: "MusicloudAudioTests", dependencies: ["MusicloudAudio"], resources: [.copy("Fixtures")])
     ]
 )

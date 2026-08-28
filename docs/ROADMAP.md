@@ -8,7 +8,9 @@
 - [x] Local library persistence
 - [x] Playback, queue navigation, seek, and volume
 - [ ] Listening and visual QA on real WAV/FLAC files
-- [ ] Folder import and background scanning
+- [x] Folder import and background scanning, progress and cancellation
+- [x] Generated WAV/FLAC decode, metadata and muted playback/seek tests
+- [x] Folder import, repeat import and restart persistence UI checks
 - [ ] Album and artist views, queue editing
 - [ ] App bundle, app icon, and media-key integration
 

@@ -8,7 +8,7 @@ public struct Track: Identifiable, Codable, Equatable, Sendable {
     public var album: String
 
     public init(url: URL, title: String? = nil, artist: String = "Unknown Artist", album: String = "Unknown Album") {
-        self.url = url
+        self.url = url.isFileURL ? url.standardizedFileURL.resolvingSymlinksInPath() : url
         self.title = title ?? url.deletingPathExtension().lastPathComponent
         self.artist = artist
         self.album = album

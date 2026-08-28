@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import MusicloudCore
+import MusicloudAudio
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -11,6 +12,8 @@ final class PlayerModel: ObservableObject {
     @Published var artwork: NSImage?
     @Published var isPlaying = false
     @Published var isImporting = false
+    @Published var importProgress: ImportProgress?
+    @Published var importSummary: String?
     @Published var elapsed = 0.0
     @Published var duration = 0.0
     @Published var error: String?
@@ -25,6 +28,7 @@ final class PlayerModel: ObservableObject {
     private var stateObservation: NSKeyValueObservation?
     private var itemObservation: NSKeyValueObservation?
     private let libraryURL: URL
+    private var importTask: Task<Void, Never>?
 
     init() {
         libraryURL = URL.applicationSupportDirectory
@@ -54,35 +58,48 @@ final class PlayerModel: ObservableObject {
     }
 
     func importFiles() {
+        guard !isImporting else { return }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = ["wav", "flac", "m4a", "mp3", "aif", "aiff", "aac"].compactMap { UTType(filenameExtension: $0) }
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
+        panel.canChooseDirectories = true
+        panel.prompt = "Import"
         guard panel.runModal() == .OK else { return }
-        let urls = panel.urls.filter(Track.supports)
+        let urls = panel.urls
+        let existing = Set(tracks.map(\.url))
         isImporting = true
-        Task {
-            var additions: [Track] = []
-            for url in urls {
-                var track = Track(url: url.standardizedFileURL)
-                let asset = AVURLAsset(url: url)
-                if let metadata = try? await asset.load(.commonMetadata) {
-                    for item in metadata {
-                        guard let value = try? await item.load(.stringValue), !value.isEmpty else { continue }
-                        switch item.commonKey {
-                        case .commonKeyTitle: track.title = value
-                        case .commonKeyArtist: track.artist = value
-                        case .commonKeyAlbumName: track.album = value
-                        default: break
-                        }
-                    }
-                }
-                additions.append(track)
+        importProgress = nil
+        importSummary = nil
+        importTask = Task {
+            defer {
+                isImporting = false
+                importProgress = nil
+                importTask = nil
             }
-            tracks = Library.merging(tracks, with: additions)
-            persist()
-            isImporting = false
+            do {
+                let result = try await LocalImporter.run(roots: urls, excluding: existing) { [weak self] progress in
+                    await self?.updateImportProgress(progress)
+                }
+                try Task.checkCancellation()
+                let previousCount = tracks.count
+                tracks = Library.merging(tracks, with: result.tracks)
+                if tracks.count != previousCount { persist() }
+                importSummary = "\(tracks.count - previousCount) tracks added"
+                if !result.issues.isEmpty {
+                    error = "\(result.issues.count) import issues:\n" + result.issues.prefix(5).joined(separator: "\n")
+                }
+            } catch is CancellationError {
+                importSummary = "Import cancelled"
+            } catch {
+                self.error = error.localizedDescription
+            }
         }
+    }
+
+    func cancelImport() { importTask?.cancel() }
+
+    private func updateImportProgress(_ progress: ImportProgress) {
+        importProgress = progress
     }
 
     func play(_ track: Track) {
@@ -115,7 +132,7 @@ final class PlayerModel: ObservableObject {
         }
         player.play()
         Task {
-            guard let metadata = try? await item.asset.load(.commonMetadata) else { return }
+            guard let metadata = try? await item.asset.load(.metadata) else { return }
             for entry in metadata where entry.commonKey == .commonKeyArtwork {
                 if let data = try? await entry.load(.dataValue), current?.id == track.id {
                     artwork = NSImage(data: data)
