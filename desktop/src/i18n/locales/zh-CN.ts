@@ -2,6 +2,10 @@
 
 export default {
   "oneDrive": {
+    "selectLoaded": "全选已加载项",
+    "scanning": "正在扫描文件夹：已找到 {{count}} 首歌曲",
+    "scanCancelled": "已取消导入",
+    "cancelImport": "取消导入",
     "reset": "清除已保存的连接",
     "back": "返回云端", "preview": "试用版", "desktop": "OneDrive 连接需要 Musicloud 桌面版。",
     "signIn": "使用 Microsoft 登录", "cancel": "取消登录", "setup": "注册 Microsoft 应用",

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Cloud, Folder, LogOut, Music2, RefreshCw, Download, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { OneDrivePage, OneDriveStatus } from '../../../types/oneDrive';
-import { importOneDriveSongs, unwrapOneDrive } from '../../../services/oneDriveService';
+import { collectOneDriveSongs, importOneDriveSongs, unwrapOneDrive } from '../../../services/oneDriveService';
 
 // Main-process authentication with a renderer-only folder browser and selection state.
 export default function OneDriveBrowser({ onBack, onImported }: { onBack: () => void; onImported: () => void }) {
@@ -17,6 +17,8 @@ export default function OneDriveBrowser({ onBack, onImported }: { onBack: () => 
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const revision = useRef(0);
+    const scan = useRef<AbortController | null>(null);
+    const [scanned, setScanned] = useState<number | null>(null);
     const iconButton = 'p-2 rounded-md hover:bg-white/10 disabled:opacity-30';
     async function run(operation: (version: number) => Promise<void>) {
         const version = ++revision.current;
@@ -45,7 +47,7 @@ export default function OneDriveBrowser({ onBack, onImported }: { onBack: () => 
             setStatus(saved); setClientId(saved.clientId);
             if (saved.connected) await browse([{ name: 'OneDrive' }], false, version);
         });
-        return () => { revision.current++; void bridge?.cancel(); };
+        return () => { revision.current++; scan.current?.abort(); void bridge?.cancel(); };
     }, [bridge]);
     return (
         <section aria-label="OneDrive" className="w-full h-full overflow-y-auto px-5 md:px-10 pb-28" style={{ color: 'var(--text-primary)' }}>
@@ -97,19 +99,46 @@ export default function OneDriveBrowser({ onBack, onImported }: { onBack: () => 
                                 onClick={() => void run(v => browse(folders.slice(0, index + 1), false, v))}
                                 className="max-w-full truncate underline disabled:no-underline">{folder.name}{index < folders.length - 1 ? ' /' : ''}</button>)}
                         </nav>
+                        {Boolean(page?.items.length) && <label className="flex items-center gap-3 text-sm pb-3">
+                            <input type="checkbox" disabled={busy}
+                                checked={Boolean(page?.items.length) && page!.items.every(item => selected.has(item.id))}
+                                ref={element => { if (element) element.indeterminate = selected.size > 0 && !page?.items.every(item => selected.has(item.id)); }}
+                                onChange={event => setSelected(event.target.checked ? new Set(page?.items.map(item => item.id)) : new Set())} />
+                            {t('oneDrive.selectLoaded', 'Select loaded items')}
+                        </label>}
                         <div className="divide-y divide-white/10" aria-busy={busy}>
                             {page?.items.map(item => <div key={item.id} className="flex items-center gap-3 py-3">
-                                {item.folder ? <Folder size={20} className="shrink-0 text-sky-300" /> : <input type="checkbox" aria-label={item.name} disabled={busy}
-                                    checked={selected.has(item.id)} onChange={() => setSelected(previous => { const next = new Set(previous); next.has(item.id) ? next.delete(item.id) : next.add(item.id); return next; })} />}
+                                <input type="checkbox" aria-label={item.name} disabled={busy}
+                                    checked={selected.has(item.id)} onChange={() => setSelected(previous => { const next = new Set(previous); next.has(item.id) ? next.delete(item.id) : next.add(item.id); return next; })} />
+                                {item.folder && <Folder size={20} className="shrink-0 text-sky-300" />}
                                 {item.folder ? <button disabled={busy} onClick={() => void run(v => browse([...folders, { id: item.id, name: item.name }], false, v))} className="min-w-0 text-left break-words">{item.name}</button>
                                     : <><Music2 size={17} className="shrink-0 opacity-50" /><span className="min-w-0 flex-1 break-words text-sm">{item.name}</span><span className="text-xs opacity-50 shrink-0">{(item.size / 1048576).toFixed(1)} MB</span></>}
                             </div>)}
                         </div>
                         {page && !page.items.length && <p className="py-8 opacity-60">{t('oneDrive.empty', 'No audio files or folders.')}</p>}
-                        <div className="flex items-center gap-4 mt-6">
+                        <div className="flex items-center flex-wrap gap-4 mt-6">
                             <button disabled={busy || !selected.size || !page} onClick={() => void run(async version => {
                                 if (!page) return;
-                                const count = await importOneDriveSongs(page.driveId, page.items.filter(item => selected.has(item.id)));
+                                const controller = new AbortController();
+                                scan.current = controller;
+                                setScanned(0);
+                                let items;
+                                try {
+                                    items = await collectOneDriveSongs(bridge, page.driveId, page.items.filter(item => selected.has(item.id)), {
+                                        signal: controller.signal, onProgress: count => { if (version === revision.current) setScanned(count); },
+                                    });
+                                } catch (error) {
+                                    if (controller.signal.aborted) {
+                                        if (version === revision.current) setNotice(t('oneDrive.scanCancelled', 'Import cancelled'));
+                                        return;
+                                    }
+                                    throw error;
+                                } finally {
+                                    if (scan.current === controller) scan.current = null;
+                                    if (version === revision.current) setScanned(null);
+                                }
+                                if (version !== revision.current || controller.signal.aborted) return;
+                                const count = await importOneDriveSongs(page.driveId, items);
                                 onImported();
                                 if (version === revision.current) { setSelected(new Set()); setNotice(t('oneDrive.imported', { count, defaultValue: '{{count}} tracks added to Folder' })); }
                             })} className="flex items-center gap-2 px-4 py-2 rounded-md bg-white text-black disabled:opacity-35">
@@ -119,7 +148,10 @@ export default function OneDriveBrowser({ onBack, onImported }: { onBack: () => 
                         </div>
                     </>
                 )}
-                {busy && <p role="status" className="text-sm opacity-60 mt-5">{t('oneDrive.loading', 'Working…')}</p>}
+                {busy && <div className="flex items-center gap-3 mt-5">
+                    <p role="status" className="text-sm opacity-60">{scanned === null ? t('oneDrive.loading', 'Working…') : t('oneDrive.scanning', { count: scanned, defaultValue: 'Scanning folders: {{count}} tracks found' })}</p>
+                    {scanned !== null && <button onClick={() => scan.current?.abort()} className={iconButton} title={t('oneDrive.cancelImport', 'Cancel import')} aria-label={t('oneDrive.cancelImport', 'Cancel import')}><X size={18} /></button>}
+                </div>}
                 {error && <p role="alert" className="text-sm text-red-300 mt-5 break-words">{error}</p>}
                 {error && bridge && !status.connected && !busy && <button
                     className="text-xs underline mt-3" onClick={() => void run(async version => {

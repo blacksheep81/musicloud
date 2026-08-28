@@ -21,7 +21,13 @@ References:
 
 ## Import and Play
 
-Browse folders, select audio files and choose Add to library. They appear under
+Browse folders, select audio files or folders and choose Add to library. Selected
+folders are scanned recursively, including all result pages and subfolders.
+Select loaded items selects only the rows currently loaded in the browser;
+each selected folder is still scanned in full. Scanning shows a track count and
+can be cancelled. Cancellation takes effect after the current listing request
+finishes; no library records are written until the complete scan succeeds.
+Overlapping folder selections and repeated files are deduplicated. They appear under
 Folder, grouped as OneDrive / drive ID. Import stores metadata and stable drive
 and item IDs, not audio or expiring download links. Duplicate imports are skipped.
 

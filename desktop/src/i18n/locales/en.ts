@@ -2,6 +2,10 @@
 
 export default {
   "oneDrive": {
+    "selectLoaded": "Select loaded items",
+    "scanning": "Scanning folders: {{count}} tracks found",
+    "scanCancelled": "Import cancelled",
+    "cancelImport": "Cancel import",
     "reset": "Clear saved connection",
     "back": "Back to cloud", "preview": "Preview", "desktop": "OneDrive requires the Musicloud desktop app.",
     "signIn": "Sign in with Microsoft", "cancel": "Cancel login", "setup": "Microsoft app registration",
