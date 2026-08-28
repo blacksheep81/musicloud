@@ -821,6 +821,7 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
                     <CloudSourcesView
                         navidromeEnabled={navidromeEnabled}
                         onBrowseNas={() => setHomeViewTab('navidrome')}
+                        onImported={onRefreshLocalSongs}
                     />
                 ) : isOnlineTab && activeAccountView === 'resolving' ? (
                     <div className="flex flex-1 w-full items-center justify-center" aria-busy="true">

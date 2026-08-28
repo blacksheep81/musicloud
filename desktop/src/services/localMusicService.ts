@@ -1506,6 +1506,10 @@ async function cleanupDirHandleIfUnused(rootFolderName: string): Promise<void> {
 // Get audio blob from local song using fileHandle
 // Returns blob URL if fileHandle exists, null otherwise
 export async function getAudioFromLocalSong(song: LocalSong): Promise<string | null> {
+    if (song.oneDrive) {
+        const { readOneDriveAudio } = await import('./oneDriveService');
+        return createSafeObjectUrl(new Blob([await readOneDriveAudio(song.oneDrive)], { type: song.mimeType }));
+    }
     const fileHandle = await getAccessibleFileHandle(song);
 
     if (fileHandle) {
@@ -1544,6 +1548,10 @@ export async function getAudioFromLocalSong(song: LocalSong): Promise<string | n
  * but returns the ArrayBuffer. Null when no handle can be reached - permission not restored, or moved.
  */
 export async function getLocalSongArrayBuffer(song: LocalSong): Promise<ArrayBuffer | null> {
+    if (song.oneDrive) {
+        const { readOneDriveAudio } = await import('./oneDriveService');
+        return readOneDriveAudio(song.oneDrive);
+    }
     const fileHandle = await getAccessibleFileHandle(song);
     if (!fileHandle) {
         console.warn(`[LocalMusic] No accessible handle for song ${song.id} (automix bytes)`);
@@ -1580,6 +1588,7 @@ async function extractAndPersistSongCover(
 }
 
 export async function ensureLocalSongCoverAsset(song: LocalSong): Promise<LocalSong> {
+    if (song.oneDrive) return song;
     if (song.localCoverAssetId && await hasLocalCoverBinary(song.localCoverAssetId)) return song;
     if (song.localCoverSource === 'folder') return song;
 

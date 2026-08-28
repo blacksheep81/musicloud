@@ -588,6 +588,7 @@ declare global {
 
   interface Window {
     electron?: {
+        oneDrive?: import('./types/oneDrive').OneDriveBridge;
       /** Beat This! inference in the main process. Null when the weights or runtime are absent. */
       runBeatThis?: (
         chunks: Array<{ data: Float32Array; frames: number }>,

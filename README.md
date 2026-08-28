@@ -12,7 +12,9 @@ Navidrome integration. It is not the earlier SwiftUI look-alike.
 See **[fork notes and setup](desktop/MUSICLOUD.md)** for provenance, local startup,
 identity isolation, and the cloud implementation milestones.
 
-- OneDrive and Google Drive are planned, not yet connected in the Electron app.
+- OneDrive has an experimental desktop connector: Microsoft login, folder browsing,
+  library import and download-before-playback. Real-account verification is pending;
+  see [OneDrive setup](desktop/docs/MUSICLOUD-ONEDRIVE.md). Google Drive is not implemented.
 - NAS access through the inherited Navidrome/Subsonic integration is retained.
   Direct WebDAV and SMB support is not implemented.
 - No signed Electron release or automatic updater is available yet.

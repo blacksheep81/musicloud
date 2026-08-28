@@ -10,6 +10,7 @@ const { createWindowPlaybackHandoffStore } = require('./windowPlaybackHandoff.cj
 const wallpaperWatchdogModule = require('./wallpaperWatchdog.cjs');
 const { createKugouApiBridge } = require('./kugouApiBridge.cjs');
 const { createQqAuthSessionRepository } = require('./qqAuthSessionRepository.cjs');
+const { createOneDrive } = require('./oneDrive.cjs');
 const { DEFAULT_DISCORD_APPLICATION_ID, createDiscordPresenceController } = require('./discordPresence.cjs');
 const { createVoiceInputPauseMonitor } = require('./voiceInputPause.cjs');
 const { createDisplaySleepBlocker } = require('./displaySleepBlocker.cjs');
@@ -129,6 +130,23 @@ if (process.platform === 'darwin' && process.arch === 'x64') {
 }
 
 const store = new Store({ projectName: 'musicloud-desktop' });
+const oneDrive = createOneDrive({
+  directory: app.getPath('userData'),
+  safeStorage,
+  openExternal: url => shell.openExternal(url),
+});
+for (const action of ['status', 'login', 'list', 'audio', 'disconnect', 'cancel']) {
+  ipcMain.handle('onedrive-' + action, async (event, payload) => {
+    if (!isTrustedMainWindowContents(event.sender) || event.senderFrame !== event.sender.mainFrame)
+      throw new Error('Untrusted OneDrive caller.');
+    try { return { ok: true, value: await oneDrive[action](payload) }; }
+    catch (error) {
+      // MSAL errors can include sensitive response context; only expose our own safe errors.
+      const message = error?.errorCode ? 'Microsoft sign-in failed. Check your Client ID and desktop redirect URI, then retry.' : error.message;
+      return { ok: false, error: message || 'OneDrive request failed.' };
+    }
+  });
+}
 // KuGou credentials stay inside the main process and are encrypted lazily after Electron is ready.
 // The bridge refuses Linux's plaintext `basic_text` fallback and degrades to an in-memory session.
 const kugouApiBridge = createKugouApiBridge({ store, safeStorage });

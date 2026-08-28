@@ -1,6 +1,14 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
+    oneDrive: {
+        status: () => ipcRenderer.invoke('onedrive-status'),
+        login: clientId => ipcRenderer.invoke('onedrive-login', clientId),
+        list: request => ipcRenderer.invoke('onedrive-list', request),
+        audio: reference => ipcRenderer.invoke('onedrive-audio', reference),
+        disconnect: () => ipcRenderer.invoke('onedrive-disconnect'),
+        cancel: () => ipcRenderer.invoke('onedrive-cancel'),
+    },
     // Beat This! inference. Returns null whenever the weights or the runtime are not there,
     // which is the browser build's permanent answer and any desktop install missing the model.
     runBeatThis: (chunks) => ipcRenderer.invoke('automix-beat-this', chunks),

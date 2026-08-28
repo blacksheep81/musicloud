@@ -55,9 +55,9 @@ The home navigation now includes Cloud (云端). It lists NAS, OneDrive,
 Google Drive and WebDAV. NAS configuration opens the existing Integration
 settings; an enabled, configured Navidrome server has an Open Library action.
 Configured does not mean a live connection has been verified.
-The other three adapters are explicitly marked unavailable, with no dummy login
-or credentials saved. Cloud selection persists across reloads and is available
-through the command palette.
+OneDrive now has an experimental desktop connector; Google Drive and WebDAV
+remain unavailable. Cloud selection persists across reloads and is available
+through the command palette. See [OneDrive setup and limitations](docs/MUSICLOUD-ONEDRIVE.md).
 
 Cloud UI validation: typecheck passed; 19 search/navigation and command registry
 tests passed. Browser screenshots checked at 1280 x 720 and 390 x 844, with no
@@ -69,17 +69,19 @@ a NAS. This does not mean raw SMB or WebDAV folders are already supported.
 
 Next milestones:
 
-1. OneDrive: main-process OAuth PKCE, encrypted token storage, folder pagination,
-   stable file identity, playback-time link resolution, seeking and cancellation.
+1. OneDrive: verify real Microsoft OAuth and cloud playback, then add streaming,
+   cloud artwork/sidecar lyrics and cache controls. The first connector downloads
+   files before playback, with a 128 MB per-file limit.
 2. Google Drive: desktop OAuth and read-only file browsing, with equivalent
    credential isolation and playback behavior.
 3. WebDAV NAS: HTTPS connection profiles, credential storage, directory listing,
    range requests, and explicit handling of local-network endpoints.
 
-No passwords or tokens belong in renderer localStorage, synced settings, logs,
-or committed configuration. Reuse Folia's existing lyric parsers and playback
+New OneDrive tokens never belong in renderer localStorage, synced settings, logs,
+or committed configuration. Inherited Navidrome storage has not been migrated.
+Reuse Folia's existing lyric parsers and playback
 adapter boundaries; do not build another lyric renderer.
 
-The Swift OneDrive implementation is reference material only and has not been
-ported into this Electron app. Cloud features must not be marked connected until
-their adapter and real-account tests pass.
+The Swift OneDrive implementation remains reference material; the Electron
+connector uses Microsoft MSAL. Saved-session status is not a guarantee of current
+server access. Real-account validation is still required before a stable release.

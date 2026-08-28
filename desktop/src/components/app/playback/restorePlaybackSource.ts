@@ -152,7 +152,12 @@ export const restorePlaybackSourceForSong = async (
             return false;
         }
 
-        const blobUrl = await getAudioFromLocalSong(songToRestore);
+        let blobUrl: string | null;
+        try { blobUrl = await getAudioFromLocalSong(songToRestore); }
+        catch (error) {
+            setStatusMsg({ type: 'error', text: error instanceof Error ? error.message : i18n.t('status.playbackFailed') });
+            return false;
+        }
         if (!blobUrl) {
             console.warn('[restorePlaybackSourceForSong] Local song file not accessible - needs resync');
             setStatusMsg({

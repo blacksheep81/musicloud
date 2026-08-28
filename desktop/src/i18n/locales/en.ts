@@ -1,6 +1,13 @@
 
 
 export default {
+  "oneDrive": {
+    "reset": "Clear saved connection",
+    "back": "Back to cloud", "preview": "Preview", "desktop": "OneDrive requires the Musicloud desktop app.",
+    "signIn": "Sign in with Microsoft", "cancel": "Cancel login", "setup": "Microsoft app registration",
+    "refresh": "Refresh", "disconnect": "Disconnect", "path": "Folder path", "empty": "No audio files or folders.",
+    "imported": "{{count}} tracks added to Folder", "import": "Add to library", "more": "Load more", "loading": "Working…"
+  },
   "cloud": {
     "title": "Cloud", "nas": "NAS music server", "webdav": "Synology / other NAS",
     "configured": "Configured", "notConfigured": "Not configured", "pending": "Not available yet",

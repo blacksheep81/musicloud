@@ -146,6 +146,8 @@ export function useLibraryPlaybackController({
     const [showNaviLyricMatchModal, setShowNaviLyricMatchModal] = useState(false);
     const [showOnlineLyricMatchModal, setShowOnlineLyricMatchModal] = useState(false);
     const managedCachedCoverObjectUrlRef = useRef<string | null>(null);
+    const localLoadRevision = useRef(0);
+    useEffect(() => () => { localLoadRevision.current++; }, []);
     const resolveLocalSongRecord = useCallback((song: SongResult | null | undefined): LocalSong | undefined => {
         const songId = (song as SongResult & { localRef?: { songId: string } } | null | undefined)?.localRef?.songId;
         return songId ? localSongs.find(localSong => localSong.id === songId) : undefined;
@@ -562,8 +564,20 @@ export function useLibraryPlaybackController({
 
     const onPlayLocalSong = useCallback(async (localSong: LocalSong, queue: LocalSong[] = [], options: PlaybackNavigationOptions = {}) => {
         interruptStagePlaybackForMainTransition();
-
-        const blobUrl = await getAudioFromLocalSong(localSong);
+        const revision = ++localLoadRevision.current;
+        const previousSong = currentSongRef.current;
+        if (localSong.oneDrive) setStatusMsg({ type: 'info', text: t('oneDrive.loading', 'Downloading from OneDrive…') });
+        let blobUrl: string | null;
+        try { blobUrl = await getAudioFromLocalSong(localSong); }
+        catch (error) {
+            if (revision === localLoadRevision.current && previousSong === currentSongRef.current)
+                setStatusMsg({ type: 'error', text: error instanceof Error ? error.message : t('status.playbackFailed') });
+            return;
+        }
+        if (revision !== localLoadRevision.current || previousSong !== currentSongRef.current) {
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+            return;
+        }
         if (!blobUrl) {
             setStatusMsg({ type: 'error', text: t('status.localFileAccessError') || '' });
             return;
@@ -571,6 +585,10 @@ export function useLibraryPlaybackController({
 
         const preparedLocalSong = await ensureLocalSongCoverAsset(localSong);
         const initialMeta = await resolveLocalMetadataUI(preparedLocalSong, null);
+        if (revision !== localLoadRevision.current || previousSong !== currentSongRef.current) {
+            URL.revokeObjectURL(blobUrl);
+            return;
+        }
 
         // Handed over, not revoked here: a blend is still playing the song this replaces on the
         // other deck, and a revoked URL is a deck that can no longer be seeked. See `retireBlobUrl`.

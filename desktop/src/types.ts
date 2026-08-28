@@ -1152,6 +1152,7 @@ export interface SearchResponse {
 export type LocalLyricsPriority = 'local' | 'online';
 
 export interface LocalSong {
+  oneDrive?: import('./types/oneDrive').OneDriveReference;
   id: string; // UUID for local file
   fileName: string;
   filePath: string; // File path for reference

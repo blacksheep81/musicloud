@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import OneDriveBrowser from './OneDriveBrowser';
 import { ArrowRight, Cloud, HardDrive, Server, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getNavidromeConfig } from '../../../services/navidromeService';
@@ -8,9 +9,11 @@ import { useSettingsUiStore } from '../../../stores/useSettingsUiStore';
 type Props = {
     navidromeEnabled: boolean;
     onBrowseNas: () => void;
+    onImported: () => void;
 };
 
-export default function CloudSourcesView({ navidromeEnabled, onBrowseNas }: Props) {
+export default function CloudSourcesView({ navidromeEnabled, onBrowseNas, onImported }: Props) {
+    const [showOneDrive, setShowOneDrive] = useState(false);
     const { t } = useTranslation();
     const openSettings = useSettingsUiStore(state => state.openSettings);
     // Subscribe to settings visibility so closing configuration refreshes the status.
@@ -22,6 +25,7 @@ export default function CloudSourcesView({ navidromeEnabled, onBrowseNas }: Prop
         { id: 'google', name: 'Google Drive', protocol: 'Google', icon: HardDrive, color: '#e9cc7a', available: false },
         { id: 'webdav', name: 'WebDAV', protocol: t('cloud.webdav'), icon: Server, color: '#d9a9ce', available: false },
     ];
+    if (showOneDrive) return <OneDriveBrowser onBack={() => setShowOneDrive(false)} onImported={onImported} />;
     return (
         <section aria-label={t('cloud.title')} className="w-full h-full overflow-y-auto px-5 md:px-10 pb-24" style={{ color: 'var(--text-primary)' }}>
             <div className="max-w-3xl mx-auto pt-8 md:pt-12">
@@ -38,7 +42,9 @@ export default function CloudSourcesView({ navidromeEnabled, onBrowseNas }: Prop
                                 <p className="text-xs mt-1 opacity-55">{row.protocol}</p>
                             </div>
                             <div className="flex items-center gap-3 ml-auto">
-                                <span className="text-xs opacity-60">{t(row.available ? configured ? 'cloud.configured' : 'cloud.notConfigured' : 'cloud.pending')}</span>
+                                <span className="text-xs opacity-60">{row.id === 'onedrive' ? t('oneDrive.preview', 'Preview') : t(row.available ? configured ? 'cloud.configured' : 'cloud.notConfigured' : 'cloud.pending')}</span>
+                                {row.id === 'onedrive' && <button onClick={() => setShowOneDrive(true)} title="OneDrive" aria-label="Open OneDrive"
+                                    className="p-2 rounded-md hover:bg-white/10"><ArrowRight size={19} /></button>}
                                 {row.available && (
                                     <>
                                         <button

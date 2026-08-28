@@ -1,6 +1,13 @@
 
 
 export default {
+  "oneDrive": {
+    "reset": "清除已保存的连接",
+    "back": "返回云端", "preview": "试用版", "desktop": "OneDrive 连接需要 Musicloud 桌面版。",
+    "signIn": "使用 Microsoft 登录", "cancel": "取消登录", "setup": "注册 Microsoft 应用",
+    "refresh": "刷新", "disconnect": "断开连接", "path": "文件夹路径", "empty": "没有音频文件或子文件夹。",
+    "imported": "已添加 {{count}} 首歌曲到 Folder", "import": "加入音乐库", "more": "加载更多", "loading": "正在处理…"
+  },
   "cloud": {
     "title": "云端", "nas": "NAS 音乐服务器", "webdav": "群晖 / 其他 NAS",
     "configured": "已配置", "notConfigured": "未配置", "pending": "暂未接入",
