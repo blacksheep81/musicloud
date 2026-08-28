@@ -54,4 +54,7 @@ and the multi-source concept of [Primuse](https://github.com/chenqi92/primuse).
 This is an independent implementation; neither project's code or assets are included.
 
 See [the roadmap](docs/ROADMAP.md) and [architecture decisions](docs/ARCHITECTURE.md).
-No open-source license has been selected yet.
+
+## License
+
+Released under the [MIT License](LICENSE).
