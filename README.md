@@ -18,6 +18,20 @@ symbolic links, filters duplicates before reading metadata, and reports progress
 Cancel discards the current import batch; existing library entries are unchanged.
 Damaged or unsupported audio files are skipped with an error summary.
 
+Albums have a cover grid and track detail view. Covers load from embedded artwork
+or a neighboring `cover.jpg`, `cover.png`, `folder.jpg`, or `folder.png` file.
+Albums currently group by album title and directory, with natural filename order;
+multi-disc merging and disc/track-number tag ordering are not implemented yet.
+
+The session queue supports play next, append, play now, moving entries, removing
+entries, and clearing upcoming tracks. Repeated songs have independent queue
+entries. Queue edits never delete audio files; the queue is not restored on restart.
+Starting a song replaces the queue with the remaining songs in its visible list.
+
+Keyboard navigation: Command-1/2 switches albums/songs, Command-Shift-L toggles
+the queue, and Command-Shift-E adds the open album to the queue. Album tiles
+support Tab focus and Return to open.
+
 ## Development
 
 Requires macOS 14+ and Swift 6 (Xcode or Command Line Tools).

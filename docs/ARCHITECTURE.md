@@ -15,6 +15,22 @@ completion. AVAsset's full metadata collection is used because commonMetadata
 does not expose the generated WAV/FLAC fixtures' tags on the tested macOS version.
 LocalScanner canonicalizes file URLs and avoids nested symlink traversal.
 
+PlaybackQueue owns current, upcoming, and history entries in MusicloudCore.
+Every entry has an independent UUID so repeating a song does not collapse queue
+controls. The player follows this queue instead of indexing the library. Late
+AVPlayerItem notifications are ignored after the active item changes.
+
+Album grouping is title plus directory, deliberately preserving compilations in
+one folder and separating different editions in different folders. Track order
+uses natural filename sorting until disc/track tag support is added.
+
+Artwork is downsampled by ImageIO and cached in a bounded NSCache. System metadata
+and AudioToolbox are tried first. Native FLAC PICTURE blocks have a bounded fallback
+reader following [RFC 9639 section 8.8](https://www.rfc-editor.org/rfc/rfc9639.html#section-8.8),
+because the tested native APIs omit that fixture's cover. It does not decode audio
+or retrieve linked image URIs. The reader caps block iteration and metadata traversal,
+checks lengths against the file/block, and prefers front-cover pictures.
+
 ## Cloud sources
 
 MusicSource is a contract only, not a working cloud integration. Provider records

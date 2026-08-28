@@ -5,7 +5,6 @@ import MusicloudCore
 @main
 struct MusicloudApp: App {
     @StateObject private var model = PlayerModel()
-
     var body: some Scene {
         WindowGroup("musicloud") {
             LibraryView(model: model)
@@ -19,76 +18,80 @@ struct MusicloudApp: App {
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Import Music...") { model.importFiles() }
-                    .keyboardShortcut("o")
-                    .disabled(model.isImporting)
+                    .keyboardShortcut("o").disabled(model.isImporting)
             }
         }
     }
 }
 
+private enum LibrarySection: String, CaseIterable {
+    case albums = "Albums"
+    case songs = "All Songs"
+    var icon: String { self == .albums ? "square.grid.2x2" : "music.note.list" }
+}
+
 struct LibraryView: View {
     @ObservedObject var model: PlayerModel
     @State private var search = ""
-    @State private var selection: Set<URL> = []
+    @State private var section: LibrarySection = .albums
+    @State private var albumID: Album.ID?
+    @State private var showQueue = false
+    private var albums: [Album] { model.albums }
+    private var album: Album? { albums.first { $0.id == albumID } }
 
     var body: some View {
         VStack(spacing: 0) {
             NavigationSplitView {
                 VStack(alignment: .leading, spacing: 24) {
                     Label("musicloud", systemImage: "cloud")
-                        .font(.title2.weight(.semibold))
-                        .padding(.top, 12)
-                    VStack(alignment: .leading, spacing: 12) {
+                        .font(.title2.weight(.semibold)).padding(.top, 12)
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("LIBRARY").font(.caption).foregroundStyle(.secondary)
-                        Label("All Songs", systemImage: "music.note.list")
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(.teal)
-                        Text("\(model.tracks.count) tracks").font(.caption).foregroundStyle(.secondary)
+                        ForEach(LibrarySection.allCases, id: \.self) { item in
+                            Button {
+                                section = item
+                                albumID = nil
+                            } label: {
+                                Label(item.rawValue, systemImage: item.icon)
+                                    .font(.body.weight(.medium))
+                                    .frame(maxWidth: .infinity, alignment: .leading).padding(8)
+                                    .background(section == item ? Color.teal.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 6))
+                            }
+                            .buttonStyle(.plain)
+                            .keyboardShortcut(KeyEquivalent(item == .albums ? "1" : "2"))
+                            .foregroundStyle(section == item ? .teal : .primary)
+                        }
+                        Text("\(albums.count) albums / \(model.tracks.count) tracks")
+                            .font(.caption).foregroundStyle(.secondary).padding(.leading, 8)
                     }
                     Spacer()
                     if let current = model.current {
-                        cover.frame(width: 156, height: 156).clipped().clipShape(RoundedRectangle(cornerRadius: 6))
+                        AlbumArtwork(url: current.url).frame(width: 156, height: 156)
                         VStack(alignment: .leading, spacing: 5) {
                             Text(current.title).font(.headline).lineLimit(2)
                             Text(current.artist).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
                 }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20).frame(maxWidth: .infinity, alignment: .leading)
                 .background(.ultraThinMaterial)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
             } detail: {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
-                        Text("All Songs").font(.title2.weight(.semibold))
+                        if album != nil {
+                            Button { albumID = nil } label: { Image(systemName: "chevron.left") }
+                                .help("Back to albums").accessibilityLabel("Back to albums")
+                        }
+                        Text(section.rawValue).font(.title2.weight(.semibold))
                         Spacer()
-                        Button { model.importFiles() } label: {
-                            Label("Import Music", systemImage: "folder.badge.plus")
-                        }
-                        .disabled(model.isImporting)
+                        Button { model.importFiles() } label: { Image(systemName: "folder.badge.plus") }
+                            .help("Import music").accessibilityLabel("Import music").disabled(model.isImporting)
+                        Button { showQueue.toggle() } label: { Image(systemName: "list.bullet") }
+                            .help("Playback queue").accessibilityLabel("Playback queue")
+                            .keyboardShortcut("l", modifiers: [.command, .shift])
                     }.padding(24)
-                    if model.isImporting {
-                        HStack(spacing: 12) {
-                            if let progress = model.importProgress {
-                                ProgressView(value: Double(progress.completed), total: Double(max(1, progress.total)))
-                                    .frame(width: 120)
-                                Text("\(progress.completed) / \(progress.total)").monospacedDigit()
-                            } else {
-                                ProgressView().controlSize(.small)
-                                Text("Scanning folders...")
-                            }
-                            Spacer()
-                            Button { model.cancelImport() } label: { Image(systemName: "xmark") }
-                                .buttonStyle(.plain).help("Cancel import")
-                                .accessibilityLabel("Cancel import")
-                        }
-                        .font(.caption).foregroundStyle(.secondary)
-                        .padding(.horizontal, 24).padding(.bottom, 12)
-                    } else if let summary = model.importSummary {
-                        Text(summary).font(.caption).foregroundStyle(.secondary)
-                            .padding(.horizontal, 24).padding(.bottom, 12)
-                    }
+                    ImportStatusView(model: model)
                     if model.tracks.isEmpty {
                         ContentUnavailableView {
                             Label("No Music Yet", systemImage: "music.note")
@@ -96,53 +99,57 @@ struct LibraryView: View {
                             Button("Import Music", systemImage: "folder.badge.plus") { model.importFiles() }
                                 .disabled(model.isImporting)
                         }
+                    } else if section == .songs {
+                        SongTable(model: model, tracks: model.tracks.filter { $0.matches(search) })
+                    } else if let album {
+                        AlbumDetailView(model: model, album: album, search: search)
                     } else {
-                        Table(model.tracks.filter { $0.matches(search) }, selection: $selection) {
-                            TableColumn("Title") { track in
-                                HStack(spacing: 8) {
-                                    Image(systemName: model.current?.id == track.id ? "speaker.wave.2.fill" : "music.note")
-                                        .foregroundStyle(model.current?.id == track.id ? .teal : .secondary)
-                                        .frame(width: 20)
-                                    Text(track.title).lineLimit(1)
-                                }
-                            }
-                            TableColumn("Artist", value: \.artist)
-                            TableColumn("Album", value: \.album)
-                            TableColumn("Format", value: \.format).width(60)
-                        }
-                        .contextMenu(forSelectionType: URL.self) { ids in
-                            Button("Play", systemImage: "play.fill") {
-                                if let track = model.tracks.first(where: { ids.contains($0.id) }) { model.play(track) }
-                            }.disabled(ids.isEmpty)
-                            Button("Remove from Library", systemImage: "minus.circle", role: .destructive) {
-                                model.remove(ids)
-                            }.disabled(ids.isEmpty)
-                        } primaryAction: { ids in
-                            if let track = model.tracks.first(where: { ids.contains($0.id) }) { model.play(track) }
-                        }
+                        AlbumGridView(model: model, albums: albums.filter {
+                            search.isEmpty || $0.tracks.contains { $0.matches(search) }
+                        }) { albumID = $0 }
                     }
                 }
                 .searchable(text: $search, prompt: "Search music")
+                .inspector(isPresented: $showQueue) {
+                    QueueView(model: model).inspectorColumnWidth(min: 240, ideal: 270, max: 320)
+                }
             }
             Divider()
-            transport.padding(.horizontal, 24).padding(.vertical, 16)
+            TransportView(model: model).padding(.horizontal, 24).padding(.vertical, 16)
         }
         .tint(.teal)
         .alert("musicloud", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
     }
+}
 
-    @ViewBuilder private var cover: some View {
-        if let image = model.artwork {
-            Image(nsImage: image).resizable().scaledToFill()
-        } else {
-            Rectangle().fill(.quaternary)
-                .overlay(Image(systemName: "opticaldisc").font(.system(size: 54, weight: .ultraLight)).foregroundStyle(.secondary))
+private struct ImportStatusView: View {
+    @ObservedObject var model: PlayerModel
+    var body: some View {
+        if model.isImporting {
+            HStack(spacing: 12) {
+                if let progress = model.importProgress {
+                    ProgressView(value: Double(progress.completed), total: Double(max(1, progress.total))).frame(width: 120)
+                    Text("\(progress.completed) / \(progress.total)").monospacedDigit()
+                } else {
+                    ProgressView().controlSize(.small)
+                    Text("Scanning folders...")
+                }
+                Spacer()
+                Button { model.cancelImport() } label: { Image(systemName: "xmark") }
+                    .buttonStyle(.plain).help("Cancel import").accessibilityLabel("Cancel import")
+            }
+            .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24).padding(.bottom, 12)
+        } else if let summary = model.importSummary {
+            Text(summary).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24).padding(.bottom, 12)
         }
     }
+}
 
-    private var transport: some View {
+private struct TransportView: View {
+    @ObservedObject var model: PlayerModel
+    var body: some View {
         HStack(spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(model.current?.title ?? "musicloud").font(.headline).lineLimit(1)
@@ -152,11 +159,10 @@ struct LibraryView: View {
                 Button { model.previous() } label: { Image(systemName: "backward.end.fill") }
                     .help("Previous").disabled(model.current == nil)
                 Button { model.togglePlayback() } label: {
-                    Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.title2).frame(width: 32, height: 32)
+                    Image(systemName: model.isPlaying ? "pause.fill" : "play.fill").font(.title2).frame(width: 32, height: 32)
                 }.help(model.isPlaying ? "Pause" : "Play").disabled(model.tracks.isEmpty)
                 Button { model.next() } label: { Image(systemName: "forward.end.fill") }
-                    .help("Next").disabled(model.current == nil || model.current?.id == model.tracks.last?.id)
+                    .help("Next").disabled(model.queue.upcoming.isEmpty)
             }.buttonStyle(.plain)
             HStack(spacing: 8) {
                 Text(timestamp(model.elapsed)).monospacedDigit().frame(width: 44)
@@ -170,7 +176,6 @@ struct LibraryView: View {
             }.frame(width: 110)
         }
     }
-
     private func timestamp(_ seconds: Double) -> String {
         let value = Int(max(0, seconds))
         return String(format: "%d:%02d", value / 60, value % 60)

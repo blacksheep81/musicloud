@@ -7,9 +7,12 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class PlayerModel: ObservableObject {
-    @Published var tracks: [Track] = []
-    @Published var current: Track?
-    @Published var artwork: NSImage?
+    @Published var tracks: [Track] = [] {
+        didSet { albums = Album.grouping(tracks) }
+    }
+    @Published private(set) var albums: [Album] = []
+    @Published var queue = PlaybackQueue()
+    var current: Track? { queue.current?.track }
     @Published var isPlaying = false
     @Published var isImporting = false
     @Published var importProgress: ImportProgress?
@@ -40,6 +43,7 @@ final class PlayerModel: ObservableObject {
         } catch {
             self.error = "Library could not be read: \(error.localizedDescription)"
         }
+        albums = Album.grouping(tracks)
         player.volume = Float(volume)
         timer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.25, preferredTimescale: 600), queue: .main) { [weak self] time in
             Task { @MainActor [weak self] in
@@ -102,7 +106,24 @@ final class PlayerModel: ObservableObject {
         importProgress = progress
     }
 
-    func play(_ track: Track) {
+    func play(_ track: Track, in context: [Track]? = nil) {
+        queue.start(context ?? tracks, at: track.id)
+        startPlayback(track)
+    }
+
+    func enqueue(_ tracks: [Track], next: Bool = false) {
+        queue.enqueue(tracks, next: next)
+    }
+
+    func playQueued(_ id: UUID) {
+        if let track = queue.playNow(id) { startPlayback(track) }
+    }
+
+    private func startPlayback(_ track: Track) {
+        player.pause()
+        player.replaceCurrentItem(with: nil)
+        elapsed = 0
+        duration = 0
         guard FileManager.default.fileExists(atPath: track.url.path) else {
             error = "File is missing: \(track.url.lastPathComponent)"
             return
@@ -110,40 +131,36 @@ final class PlayerModel: ObservableObject {
         if let ended { NotificationCenter.default.removeObserver(ended) }
         if let failed { NotificationCenter.default.removeObserver(failed) }
         itemObservation = nil
-        current = track
-        artwork = nil
-        elapsed = 0
-        duration = 0
         let item = AVPlayerItem(url: track.url)
         player.replaceCurrentItem(with: item)
         itemObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
             let message = item.error?.localizedDescription ?? "This audio file could not be played."
-            Task { @MainActor [weak self] in self?.error = message }
+            Task { @MainActor [weak self] in
+                guard let self, self.player.currentItem === item else { return }
+                self.error = message
+            }
         }
         ended = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.next(automatically: true) }
+            Task { @MainActor [weak self] in
+                guard let self, self.player.currentItem === item else { return }
+                self.next(automatically: true)
+            }
         }
         failed = NotificationCenter.default.addObserver(forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.player.pause()
-                self?.error = "Playback stopped because the audio could not be read."
+                guard let self, self.player.currentItem === item else { return }
+                self.player.pause()
+                self.error = "Playback stopped because the audio could not be read."
             }
         }
         player.play()
-        Task {
-            guard let metadata = try? await item.asset.load(.metadata) else { return }
-            for entry in metadata where entry.commonKey == .commonKeyArtwork {
-                if let data = try? await entry.load(.dataValue), current?.id == track.id {
-                    artwork = NSImage(data: data)
-                }
-            }
-        }
     }
 
     func togglePlayback() {
         guard current != nil else {
-            if let first = tracks.first { play(first) }
+            if let queued = queue.advance() { startPlayback(queued) }
+            else if let first = tracks.first { play(first) }
             return
         }
         if player.timeControlStatus == .paused {
@@ -155,17 +172,17 @@ final class PlayerModel: ObservableObject {
     }
 
     func next(automatically: Bool = false) {
-        guard let current, let index = tracks.firstIndex(where: { $0.id == current.id }) else { return }
-        if index + 1 < tracks.count {
-            play(tracks[index + 1])
+        if let next = queue.advance() {
+            startPlayback(next)
         } else if automatically {
             player.pause()
         }
     }
 
     func previous() {
-        guard let current, let index = tracks.firstIndex(where: { $0.id == current.id }) else { return }
-        if elapsed > 3 || index == 0 { seek(0) } else { play(tracks[index - 1]) }
+        guard current != nil else { return }
+        if elapsed > 3 || queue.history.isEmpty { seek(0) }
+        else if let previous = queue.previous() { startPlayback(previous) }
     }
 
     func seek(_ seconds: Double) {
@@ -176,11 +193,10 @@ final class PlayerModel: ObservableObject {
         if let current, ids.contains(current.id) {
             player.pause()
             player.replaceCurrentItem(with: nil)
-            self.current = nil
-            artwork = nil
             duration = 0
             elapsed = 0
         }
+        queue.removeTracks(ids)
         tracks.removeAll { ids.contains($0.id) }
         persist()
     }

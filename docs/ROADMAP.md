@@ -11,7 +11,8 @@
 - [x] Folder import and background scanning, progress and cancellation
 - [x] Generated WAV/FLAC decode, metadata and muted playback/seek tests
 - [x] Folder import, repeat import and restart persistence UI checks
-- [ ] Album and artist views, queue editing
+- [x] Album grid/detail, embedded and sidecar covers, queue editing
+- [ ] Artist views and disc/track-number ordering
 - [ ] App bundle, app icon, and media-key integration
 
 ## 0.2 - OneDrive

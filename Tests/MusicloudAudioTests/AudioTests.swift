@@ -74,6 +74,42 @@ private actor ProgressRecorder {
     func append(_ value: ImportProgress) { values.append(value) }
 }
 
+@Test func artworkUsesSidecarAndResizesIt() async throws {
+    let image = try #require(await ArtworkLoader.load(fixture("wav"), maximumSize: 120))
+    #expect(image.width == 120)
+    #expect(image.height == 120)
+}
+
+@Test func artworkUsesEmbeddedCoverWithoutSidecar() async throws {
+    let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let file = root.appending(path: "test.flac")
+    try FileManager.default.copyItem(at: fixture("flac"), to: file)
+    let image = try #require(await ArtworkLoader.load(file, maximumSize: 80))
+    #expect(image.width == 80)
+    #expect(image.height == 80)
+    let noCover = root.appending(path: "test.wav")
+    try FileManager.default.copyItem(at: fixture("wav"), to: noCover)
+    #expect(await ArtworkLoader.load(noCover) == nil)
+}
+
+@Test func flacPictureRejectsTruncationAndExternalLinks() {
+    func integer(_ value: UInt32) -> Data {
+        var big = value.bigEndian
+        return withUnsafeBytes(of: &big) { Data($0) }
+    }
+    let image = Data([1, 2, 3])
+    let valid = integer(3) + integer(10) + Data("image/jpeg".utf8) + integer(0)
+        + Data(repeating: 0, count: 16) + integer(3) + image
+    #expect(FLACArtwork.parse(valid)?.data == image)
+    for length in 0..<valid.count { #expect(FLACArtwork.parse(Data(valid.prefix(length))) == nil) }
+    let linked = integer(3) + integer(3) + Data("-->".utf8) + integer(0)
+        + Data(repeating: 0, count: 16) + integer(3) + image
+    #expect(FLACArtwork.parse(linked) == nil)
+    #expect(FLACArtwork.parse(integer(3) + integer(.max)) == nil)
+}
+
 @Test func importerReportsProgressAndSkipsExistingTracks() async throws {
     let wav = try fixture("wav")
     let flac = try fixture("flac")
